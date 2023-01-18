@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "311904694437",
+    "project_id": "hayatigeridonustur",
+    "storage_bucket": "hayatigeridonustur.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:311904694437:android:640659ccd87b8bbb915d4c",
+        "android_client_info": {
+          "package_name": "com.example.atigindanhaberver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "311904694437-ru475fabiuch16d82k52gupimd5mldc1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.atigindanhaberver",
+            "certificate_hash": "b99a8b6ae7aa29be1727ba74fba79d58c62bf787"
+          }
+        },
+        {
+          "client_id": "311904694437-ckv5jlof7pmqh85ujmltjcs4ve0a545m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5Ws9f0mlYAzcnWUziE2ccyVFTenrLSgE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "311904694437-ckv5jlof7pmqh85ujmltjcs4ve0a545m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
