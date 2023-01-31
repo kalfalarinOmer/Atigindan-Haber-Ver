@@ -1,6 +1,7 @@
 
 import 'package:atigindanhaberver/FirstPage.dart';
 import 'package:atigindanhaberver/Helpers/MyInheritor.dart';
+import 'package:atigindanhaberver/NotificationsPage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -76,7 +77,33 @@ class GiverHomePageState extends State<GiverHomePage>{
       ),
       body: ListView(
         children: [
-          const SizedBox(height: 20,),
+          Padding(
+            padding: const EdgeInsets.only( top: 20.0, bottom: 20),
+            child: Column(
+              children: [
+                TextButton.icon(
+                  icon: Icon(Icons.notification_important,
+                      size: user_map["totalWeights_unAnswered"] == "" ? 20: 30,
+                      color: user_map["totalWeights_unAnswered"] == "" ? Colors.blueGrey: Colors.orange
+                  ),
+                  label: Text("Bildirimler",
+                      style: TextStyle( fontWeight: FontWeight.bold,
+                          color: user_map["totalWeights_unAnswered"] == "" ? Colors.blueGrey: Colors.orange,
+                          fontSize: user_map["totalWeights_unAnswered"] == "" ? 15: 20,
+                          decoration: TextDecoration.underline)),
+                  onPressed: (){
+                    Navigator.push(context, MaterialPageRoute(builder: (context)=> NotificationsPage(
+                      user_map: user_map, user_id: user_id, user_ref: user_ref
+                    )));
+                  },
+                ),
+                Visibility( visible: user_map["totalWeights_unAnswered"] == "" ? false : true,
+                  child: const Text("* Okunmamış bildirimleriniz bulunmaktadır!", textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.orange, fontSize: 15, fontWeight: FontWeight.bold),),
+                ),
+              ],
+            ),
+          ),
           const Text("Geri Dönüştürülebilir Atıklar konusunda rehberlik ihtiyacınız olduğunuzu düşünüyorsanız Eğitim "
               "butonuna tıklayarak *Eğitim* sayfasını ziyaret edebilirsiniz.",
             style: TextStyle(color: Colors.indigo, fontSize: 16, fontWeight: FontWeight.w700),
@@ -853,6 +880,7 @@ class GiverHomePageState extends State<GiverHomePage>{
         DocumentReference doc_ref = doc.reference;
         doc_ref.update({
           "totalWeights_allTimes": doc.get("totalWeights_allTimes") + dayTotalWeight,
+          "totalWeights_unAnsweredTimes": doc.get("totalWeights_unAnsweredTimes") + dayTotalWeight,
           "lastNotifyDate": DateTime.now(),
           "lastNotifyDate_S": DateTime.now().toString(),
         });
@@ -943,7 +971,6 @@ class GiverHomePageState extends State<GiverHomePage>{
   }
 
 }
-
 
 
 

@@ -455,6 +455,7 @@ class TakerHomePageState extends State<TakerHomePage>{
           ElevatedButton(
             child: const Text("Tamam"),
             onPressed: (){
+
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
                   TakerHomePage(user_map: user_map, user_id: user_id, user_ref: user_ref,)));
             },
