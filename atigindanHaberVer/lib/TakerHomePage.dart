@@ -39,6 +39,7 @@ class TakerHomePageState extends State<TakerHomePage>{
   List<String> points = [];
   List<String> districts = [];
 
+  List <int> indexesFromWasteTakingToNotify = [];
   int indexFromWasteTakingToNotify = 0;
 
   final formKey = GlobalKey<FormState>();
@@ -80,7 +81,7 @@ class TakerHomePageState extends State<TakerHomePage>{
               padding: EdgeInsets.all(8.0),
               child: Text("* Henüz cevaplamamış atık toplama taleplerine ait bilgiler listelenmiştir. Atık "
                   "toplama tarih ve saat mahalleye haber verildiğinde talepler cevaplandırılmış sayılır ve "
-                  "tüm bilgiler sıfırlanır.", textAlign: TextAlign.center,
+                  "tüm atık bilgileri sıfırlanır.", textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.green, fontWeight: FontWeight.w700),
               ),
             ),
@@ -160,7 +161,9 @@ class TakerHomePageState extends State<TakerHomePage>{
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                 subtitle: Column(
                   children: [
-                    const Text("Mahallenin üzerine tıklayarak atık toplama tarihi, saat aralığı ve noktasını giriniz."),
+                    const Text("Mahallenin üzerine tıklayarak atık ağırlığını öğrenebilir; "
+                        "atık toplama tarihi, saat aralığı ve noktasını girebilirsiniz.",
+                      textAlign: TextAlign.justify,),
                     const SizedBox(height: 10,),
                     SizedBox(height: 150,
                       child: GridView.builder(
@@ -170,9 +173,8 @@ class TakerHomePageState extends State<TakerHomePage>{
                         itemBuilder: (context, index){
                           return GestureDetector(
                             child: GridTile(
-                              footer: Divider(thickness: 3,),
-                              child: Text("${user_map["districtsToTakeWaste"][index]}: "
-                                  "${districts_weights[index].toString()} kg" ,
+                              footer: const Divider(thickness: 3,),
+                              child: Text("${user_map["districtsToTakeWaste"][index]}",
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18,
                                     fontStyle: FontStyle.italic, decoration: TextDecoration.underline,
                                     color: districts_weights[index] >= 50 ? Colors.red : Colors.amber.shade800,
@@ -180,7 +182,8 @@ class TakerHomePageState extends State<TakerHomePage>{
                               ),
                             ),
                             onTap: (){
-                              wasteTakingTime(index);
+                              getWasteWeight(index);
+//                              wasteTakingTime(index);
                             },
                           );
                         },
@@ -280,6 +283,58 @@ class TakerHomePageState extends State<TakerHomePage>{
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => FirstPage()));
   }
 
+  Future<void> getWasteWeight(int index) async {
+    List <int> districtTotalWeights = [];
+    int totalOfWieghts = 0;
+    
+    await FirebaseFirestore.instance.collection("takerUsers").doc(user_id).collection("takenNotifications")
+        .where("isAnswered", isEqualTo: false).where("district", isEqualTo: user_map["districtsToTakeWaste"][index])
+        .get().then((_nots) =>_nots.docs.forEach((_not) {
+      districtTotalWeights.add(_not.get("dayTotalWeight"));
+    }));
+
+    for (int i = 0; i < districtTotalWeights.length; i++){
+      totalOfWieghts += districtTotalWeights[i];
+    }
+
+    AlertDialog alertDialog = AlertDialog(
+      title: Center(
+          child: Text("${user_map["districtsToTakeWaste"][index]} mahallesi için toplam atık ağırlığı: ",
+            textAlign: TextAlign.center,
+          )),
+      content: Row (
+        mainAxisAlignment: MainAxisAlignment.center,
+
+          children: [
+            Text(totalOfWieghts.toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25,
+              fontStyle: FontStyle.italic, decoration: TextDecoration.underline,
+              color: districts_weights[index] >= 50 ? Colors.red : Colors.amber.shade800,),
+            ),
+            const Text(" kg", style: TextStyle(fontSize: 18),),
+          ]
+      ),
+      actions: [
+        ElevatedButton(
+          child: const Text("Toplama Bilgileri Gir"),
+          onPressed: (){
+            Navigator.of(context, rootNavigator: true).pop("dialog");
+
+            if(points.contains(user_map["districtsToTakeWaste"][index])){
+              AlertDialog alertDialog = const AlertDialog(
+                title: Text("Hata: mahalle toplama bilgileri zaten eklenmiştir. Yeni bilgi girişi için "
+                    "mevcut olanı kaldırınız.", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),),
+              ); showDialog(context: context, builder: (_) => alertDialog);
+            } else {
+              wasteTakingTime(index);
+            }
+
+          },
+        ),
+      ],
+    ); showDialog(context: context, builder: (_) => alertDialog);
+    
+  }
+
   void wasteTakingTime(int index) async {
     AlertDialog alertDialog = AlertDialog(
       title: Center(
@@ -310,7 +365,7 @@ class TakerHomePageState extends State<TakerHomePage>{
                   },
                 ),
                 const Divider(thickness: 3, color: Colors.indigo,),
-                SizedBox(height: 5,),
+                const SizedBox(height: 5,),
                 const Text("Atık toplama saati için girilecek saat aralığı en fazla 1 saat olmalıdır. "
                     "Örneğin 9-10, 11.30-12.00, 13.15-14.00 ... gibi", style: TextStyle(fontSize: 13),),
                 const SizedBox(height: 5,),
@@ -330,7 +385,7 @@ class TakerHomePageState extends State<TakerHomePage>{
                   },
                 ),
                 const Divider(thickness: 3, color: Colors.indigo,),
-                SizedBox(height: 5,),
+                const SizedBox(height: 5,),
                 const Text("Atık toplama noktasını herkesin anlayabileceği şekilde kısaca tarif ediniz. "
                     "Örneğin Y okulunun önü gibi", style: TextStyle(fontSize: 13),),
                 const SizedBox(height: 5,),
@@ -371,9 +426,11 @@ class TakerHomePageState extends State<TakerHomePage>{
 
               takerFourthCard.value = true;
 
-              indexFromWasteTakingToNotify = index;
+              indexFromWasteTakingToNotify = indexFromWasteTakingToNotify++;
 
               setState(() {});
+
+              print(points);
 
               Navigator.of(context, rootNavigator: true).pop("dialog");
             }
@@ -394,6 +451,7 @@ class TakerHomePageState extends State<TakerHomePage>{
             districtsToTakeWaste.removeAt(index);
             dates.removeAt(index);
             times.removeAt(index);
+            points.removeAt(index);
 
             if (districtsToTakeWaste.isEmpty){
               takerFourthCard.value = false;
@@ -423,26 +481,56 @@ class TakerHomePageState extends State<TakerHomePage>{
 
   }
 
-  void notify() async {
 
+//*************TOPLAYICI KURUM MAHALLEYE BİLDİRİM GÖNDERME BAŞLANGIÇ************************
+  void notify() async {
     if (takerFourthCard.value == true ){
 
+//**************Veri tabanına bildirimin kaydı başlangıç ***************************
+
       await FirebaseFirestore.instance.collection("takerUsers").doc(user_id).get().then((_user) {
+        _user.reference.collection("sentNotifications").add({
+          "sentDate" : DateTime.now(), "sentDate_S": DateTime.now().toString(),
+          "districtsToTakeWastes": districtsToTakeWaste,
+          "datesToTake_S": dates,
+          "timesToTake_S": times,
+          "pointsToTake_S": points,
+        });
 
         _user.reference.collection("takenNotifications").where("isAnswered", isEqualTo: false)
-            .where("district", whereIn: districtsToTakeWaste ).get().then((nots) => nots.docs.forEach((doc) {
+            .where("district", whereIn: districtsToTakeWaste ).get().then((nots) => nots.docs.forEach((doc) async {
           final doc_ref = doc.reference;
           final doc_id  = doc.id;
           final doc_map = doc.data();
           final doc_lenght = doc_map.length;
 
+          print(doc_map["giverMail"]);
+
           doc.reference.update({
             "answerDate" : DateTime.now(), "answerDate_S": DateTime.now().toString(),
-            "takenDate_S": dates[indexFromWasteTakingToNotify], "isAnswered" : true,
+            "dateToTake_S": dates[indexFromWasteTakingToNotify], "isAnswered" : true,
+            "timeToTake_S": times[indexFromWasteTakingToNotify],
+            "pointToTake_S": points[indexFromWasteTakingToNotify],
           });
 
+          await FirebaseFirestore.instance.collection("giverUsers").where("userMail", isEqualTo: doc_map["giverMail"])
+              .get().then((_givers) => _givers.docs.forEach((_giver) {
+
+                _giver.reference.collection("takenNotifications").add({
+                  "answerDate" : DateTime.now(), "answerDate_S": DateTime.now().toString(),
+                  "dateToTake_S": dates[indexFromWasteTakingToNotify],
+                  "timeToTake_S": times[indexFromWasteTakingToNotify],
+                  "pointToTake_S": points[indexFromWasteTakingToNotify],
+                  "isTaken": false, "isRead": false
+                });
+
+                _giver.reference.update({
+                  "notificationsUnseen": _giver.data()["notificationsUnseen"]+1
+                });
+          }));
         }));
       });
+//**************Veri tabanına bildirimin kaydı bitiş ***************************
 
       AlertDialog alertDialog = AlertDialog(
         title: const Center(
@@ -474,4 +562,6 @@ class TakerHomePageState extends State<TakerHomePage>{
     }
 
   }
+
+
 }

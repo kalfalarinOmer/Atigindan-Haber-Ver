@@ -83,13 +83,13 @@ class GiverHomePageState extends State<GiverHomePage>{
               children: [
                 TextButton.icon(
                   icon: Icon(Icons.notification_important,
-                      size: user_map["totalWeights_unAnswered"] == "" ? 20: 30,
-                      color: user_map["totalWeights_unAnswered"] == "" ? Colors.blueGrey: Colors.orange
+                      size: user_map["notificationsUnseen"] == 0 ? 20: 30,
+                      color: user_map["notificationsUnseen"] == 0 ? Colors.blueGrey: Colors.orange
                   ),
                   label: Text("Bildirimler",
                       style: TextStyle( fontWeight: FontWeight.bold,
-                          color: user_map["totalWeights_unAnswered"] == "" ? Colors.blueGrey: Colors.orange,
-                          fontSize: user_map["totalWeights_unAnswered"] == "" ? 15: 20,
+                          color: user_map["notificationsUnseen"] == 0 ? Colors.blueGrey: Colors.orange,
+                          fontSize: user_map["notificationsUnseen"] == 0 ? 15: 20,
                           decoration: TextDecoration.underline)),
                   onPressed: (){
                     Navigator.push(context, MaterialPageRoute(builder: (context)=> NotificationsPage(
@@ -97,14 +97,14 @@ class GiverHomePageState extends State<GiverHomePage>{
                     )));
                   },
                 ),
-                Visibility( visible: user_map["totalWeights_unAnswered"] == "" ? false : true,
+                Visibility( visible: user_map["notificationsUnseen"] == 0 ? false : true,
                   child: const Text("* Okunmamış bildirimleriniz bulunmaktadır!", textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.orange, fontSize: 15, fontWeight: FontWeight.bold),),
                 ),
               ],
             ),
           ),
-          const Text("Geri Dönüştürülebilir Atıklar konusunda rehberlik ihtiyacınız olduğunuzu düşünüyorsanız Eğitim "
+          const Text("Geri Dönüştürülebilir Atıklar konusunda rehberliğe ihtiyacınız olduğunu düşünüyorsanız Eğitim "
               "butonuna tıklayarak *Eğitim* sayfasını ziyaret edebilirsiniz.",
             style: TextStyle(color: Colors.indigo, fontSize: 16, fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
@@ -868,6 +868,9 @@ class GiverHomePageState extends State<GiverHomePage>{
     );
   }
 
+
+//*************ATIK VEREN GÖNDERİLEN BİLDİRİMİ VERİ TABANINA KAYDETME BAŞLANGIÇ************************
+
   void notify(List<String> fullAdresses_subtitle, List<String> cities, List<String> towns, List<String> disricts) async {
 
     if (giverFirstTile.value == true && giverSecondTile.value == true
@@ -876,11 +879,12 @@ class GiverHomePageState extends State<GiverHomePage>{
       int dayTotalWeight = giverPaperWeight.value + giverGlassWeight.value + giverPlasticWeight.value +
           giverMetalWeight.value + giverElectronicWeight.value + giverPackWeight.value + giverOtherWeight.value;
 
+//*******firebase verici kullalnıcı bildirimi kayıt başlangıç*********************
       await FirebaseFirestore.instance.collection("giverUsers").doc(user_id).get().then((doc) {
         DocumentReference doc_ref = doc.reference;
         doc_ref.update({
           "totalWeights_allTimes": doc.get("totalWeights_allTimes") + dayTotalWeight,
-          "totalWeights_unAnsweredTimes": doc.get("totalWeights_unAnsweredTimes") + dayTotalWeight,
+          "totalWeights_unAnswered": doc.get("totalWeights_unAnswered") + dayTotalWeight,
           "lastNotifyDate": DateTime.now(),
           "lastNotifyDate_S": DateTime.now().toString(),
         });
@@ -890,9 +894,7 @@ class GiverHomePageState extends State<GiverHomePage>{
           "metal": giverMetalWeight.value, "electronic": giverElectronicWeight.value, "pack": giverPackWeight.value,
           "other": giverOtherWeight.value, "dayTotalWeight" : dayTotalWeight, "sentNotificationDate": DateTime.now(),
           "adresSent": fullAdresses_subtitle[0], "citySent": cities[0], "townSent": towns[0],
-          "districtSent":disricts[0], "sentNotificationDate_S": DateTime.now().toString(), "isTaken": false,
-          "answerDate": null, "answerDate_S": "", "dateToTake_S": "",
-
+          "districtSent":disricts[0], "sentNotificationDate_S": DateTime.now().toString(),
         });
       });
       
@@ -932,6 +934,8 @@ class GiverHomePageState extends State<GiverHomePage>{
             });
       }));
 
+//*******firebase verici kullalnıcı bildirimi kayıt bitiş*********************
+
       AlertDialog alertDialog = AlertDialog(
         title: const Center(
           child: Text("Atığınız başarıyla ilgili kuruma gönderildi. Bildirimlerinizi takip ederek "
@@ -962,6 +966,7 @@ class GiverHomePageState extends State<GiverHomePage>{
     }
 
   }
+//*************ATIK VEREN GÖNDERİLEN BİLDİRİMİ VERİ TABANINA KAYDETME BİTİŞ************************
 
   void justAdress0Alert() {
     AlertDialog alertDialog = const AlertDialog(

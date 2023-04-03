@@ -280,59 +280,63 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
                 Center(
                   child: Wrap( spacing: 20,
                     children: [
-                      FloatingActionButton.extended(
-                        backgroundColor: Colors.green,
-                        heroTag: "kaydol",
-                        icon: const Icon(Icons.add),
-                        label: const Text( "KAYDOL",
-                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),),
-                        onPressed: () async {
+                      Visibility( visible: isLogin == true ? false : true,
+                        child: FloatingActionButton.extended(
+                          backgroundColor: Colors.green,
+                          heroTag: "kaydol",
+                          icon: const Icon(Icons.add),
+                          label: const Text( "KAYDOL",
+                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),),
+                          onPressed: () async {
 
-                          if (isRegister == false) {
-                            setState(() {
-                              isRegister = true;
-                              isLogin = false;
-                            });
-                          } else if (isRegister == true) {
-                            if (_formKey.currentState!.validate()) {
-                              _formKey.currentState!.save();
+                            if (isRegister == false) {
+                              setState(() {
+                                isRegister = true;
+                                isLogin = false;
+                              });
+                            } else if (isRegister == true) {
+                              if (_formKey.currentState!.validate()) {
+                                _formKey.currentState!.save();
 
-                              if (MyInheritor.of(context)?.isGiver == true){
-                                register();
-                              } else if (MyInheritor.of(context)?.isTaker == true){
-                                if (isMunicipality == true){
+                                if (MyInheritor.of(context)?.isGiver == true){
                                   register();
-                                } else {
-                                  AlertDialog alertDialog = const AlertDialog(
-                                    title: Text("Kurum seçmediniz."),
-                                  ); showDialog(context: context, builder: (_) => alertDialog);
+                                } else if (MyInheritor.of(context)?.isTaker == true){
+                                  if (isMunicipality == true){
+                                    register();
+                                  } else {
+                                    AlertDialog alertDialog = const AlertDialog(
+                                      title: Text("Kurum seçmediniz."),
+                                    ); showDialog(context: context, builder: (_) => alertDialog);
+                                  }
                                 }
                               }
                             }
-                          }
-                        },
+                          },
+                        ),
                       ),
 
-                      FloatingActionButton.extended(
-                        backgroundColor: Colors.blue,
-                        heroTag: "giris",
-                        icon: const Icon(Icons.login),
-                        label: const Text("GİRİŞ YAP",
-                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            _formKey.currentState!.save();
+                      Visibility( visible: isRegister == true ? false : true,
+                        child: FloatingActionButton.extended(
+                          backgroundColor: Colors.blue,
+                          heroTag: "giris",
+                          icon: const Icon(Icons.login),
+                          label: const Text("GİRİŞ YAP",
+                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),),
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              _formKey.currentState!.save();
 
-                            if (isLogin == false) {
-                              setState(() {
-                                isRegister = false;
-                                isLogin = true;
-                              });
-                            } else if (isLogin == true) {
-                              logIn();
+                              if (isLogin == false) {
+                                setState(() {
+                                  isRegister = false;
+                                  isLogin = true;
+                                });
+                              } else if (isLogin == true) {
+                                logIn();
+                              }
                             }
-                          }
-                        },
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -439,9 +443,11 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => FirstPage()));
   }
 
+//*************KAYIT FONKSİYONU BAŞLANGIÇ************************
   void register() async {
 
     try {
+//*************UYGULAMAYA KAYIT KODLARI************************
 
       final UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _mailer.text.trim(), password: _passworder.text.trim()
@@ -474,15 +480,16 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
           String fullAdress1 = "yeni güncellemeyi bekleyin";
           String fullAdress2 = "yeni güncellemeyi bekleyin";
 
+//*****************ATIK VEREN KULLANICI BİLGİLERİNİN VERİ TABANINA KAYDI**********************
           DocumentReference ref_user = await FirebaseFirestore.instance.collection("giverUsers").add({
             "userName": MyInheritor.of(context)?.userName, "userMail": user.email, "registerDate": DateTime.now(),
-            "userAuthid": user.uid, "totalWeights_allTimes": 0, "takerOrg": takerOrg,
+            "userAuthid": user.uid, "totalWeights_allTimes": 0, "totalWeights_unAnswered": 0, "takerOrg": takerOrg,
             "city0": city0, "town0": town0, "giverDistricts0" : giverDistricts0, "giverAdress0": giverAdress0,
             "fullAdress0": fullAdress0,
             "city1": city1, "town1": town1, "giverDistricts1" : giverDistricts1, "giverAdress1": giverAdress1,
             "fullAdress1": fullAdress1,
             "city2": city2, "town2": town2, "giverDistricts2" : giverDistricts2, "giverAdress2": giverAdress2,
-            "fullAdress2": fullAdress2,
+            "fullAdress2": fullAdress2, "notificationsUnseen": 0,
           });
 
         } else if (MyInheritor.of(context)?.isTaker == true) {
@@ -490,6 +497,7 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
           String allDistricts_S = _districter.text.trim().toLowerCase();
           allDistricts = allDistricts_S.split(", ");
 
+//*****************ATIK TOPLAYAN KULLANICI BİLGİLERİNİN VERİ TABANINA KAYDI**********************
           DocumentReference ref_user = await FirebaseFirestore.instance.collection("takerUsers").add({
             "userName": MyInheritor.of(context)?.userName, "userMail": user.email, "registerDate": DateTime.now(),
             "userAuthid": user.uid, "city0": city0, "town0": town0, "allDistricts" : allDistricts,
@@ -497,6 +505,7 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
             "totalWeights_unAnswered":0, "paperWeights_unAnswered": 0, "glassWeights_unAnswered": 0,
             "plasticWeights_unAnswered": 0, "metalWeights_unAnswered": 0, "electronicWeights_unAnswered": 0,
             "packWeights_unAnswered": 0, "otherWeights_unAnswered": 0, "takenNotificationCount": 0,
+            "notificationsUnseen": 0,
           });
 
         }
@@ -523,14 +532,19 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
       ); showDialog(context: context, builder: (_) => alertDialog);
     }
   }
+//*************KAYIT FONKSİYONU BİTİŞ************************
 
+
+//*************GİRİŞ FONKSİYONU BAŞLANGIÇ************************
   void logIn() async {
     dynamic user_map;   dynamic user_id;    dynamic user_ref;
 
+//***********ŞİFRE İLE GİRİŞ YAPABİLME***************
     try {
       final UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _mailer.text.trim(), password: _passworder.text.trim()
       );
+
       final User? user = userCredential.user;
 
       if (user != null) {
@@ -538,8 +552,8 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
         MyInheritor.of(context)?.userMail = _mailer.text.trim();
         MyInheritor.of(context)?.uid = user.uid;
 
+//*************ATIK VEREN BİLGİLİERİNİN VERİ TABANINDAN GETİRİLMESİ BAŞLANGIÇ************************
         if (MyInheritor.of(context)?.isGiver) {
-          
           await FirebaseFirestore.instance.collection("giverUsers").where("userMail",
               isEqualTo: MyInheritor.of(context)?.userMail ).get().then((users) => users.docs.forEach((_user) {
                 user_map = _user.data();
@@ -549,7 +563,9 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
                     GiverHomePage(user_map: user_map, user_id: user_id, user_ref: user_ref,)));
           }));
+//*************ATIK VEREN BİLGİLİERİNİN VERİ TABANINDAN GETİRİLMESİ BİTİŞ************************
 
+//*************ATIK TOPLAYAN BİLGİLİERİNİN VERİ TABANINDAN GETİRİLMESİ BAŞLANGIÇ************************
         } else if (MyInheritor.of(context)?.isTaker) {
 
           await FirebaseFirestore.instance.collection("takerUsers").where("userMail",
@@ -565,6 +581,7 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
                       giver.get("plasticWeight") + giver.get("metalWeight") + giver.get("electronicWeight") +
                       giver.get("packWeight") + giver.get("otherWeight");
                     }));
+//*************ATIK TOPLAYAN BİLGİLİERİNİN VERİ TABANINDAN GETİRİLMESİ BİTİŞ************************
 
                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>
                     TakerHomePage(user_map: user_map, user_id: user_id, user_ref: user_ref)));
@@ -592,6 +609,7 @@ class RegisterLoginPageState extends State<RegisterLoginPage>{
     }
 
   }
+//*************GİRİŞ FONKSİYONU BİTİŞ************************
 
   void justMunicipalityAlert() {
     AlertDialog alertDialog = const AlertDialog(

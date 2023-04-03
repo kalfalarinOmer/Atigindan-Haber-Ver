@@ -26,19 +26,28 @@ class NotificationsPageState extends State<NotificationsPage>{
       body: ListView(
         children: [
           const Padding(
-            padding: EdgeInsets.all(20.0),
-            child: Text("Tüm gelen bildirimleriniz tarih sıralmasına göre sondan başa doğru listelenmektedir. "
+            padding: EdgeInsets.only(top: 20.0, left: 10, right: 10),
+            child: Text("* Tüm bildirimleriniz tarih sıralmasına göre sondan başa doğru listelenmektedir. "
                 "Okumadıklarınız koyu renklidir.",
               style: TextStyle(color: Colors.indigo, fontSize: 16, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
           ),
+          const Padding(
+            padding: EdgeInsets.only(top: 10.0, left: 10, right: 10, bottom: 10),
+            child: Text("** Bildirimlerinize uzun tıklayarak belirtilen saatlerde "
+                "kurumun atığınızı aldığını onaylayabilirsiniz.",
+              style: TextStyle(color: Colors.indigo, fontSize: 16, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+          ),
 
+//************ VERİ TABANINDAN GELEN BİLDİRİMLER GÖSTERİLİYOR *******************
           Center(
             child: StreamBuilder(
               stream: FirebaseFirestore.instance.collection("giverUsers").doc(user_id)
-                  .collection("takenNotifications").orderBy("isSeen", descending: false)
-                  .orderBy("sentDate_S", descending: true).snapshots(),
+                  .collection("takenNotifications").orderBy("isRead", descending: false)
+                  .orderBy("answerDate", descending: true).snapshots(),
               builder: (context, snapshot){
                 if(snapshot.hasError){ return const Center( child:Icon(Icons.warning_amber, size: 50,));}
 
@@ -58,7 +67,7 @@ class NotificationsPageState extends State<NotificationsPage>{
 
                         return Card( elevation: 10,
                           child:ListTile(
-                              tileColor: not_map["isSeen"] == false ? Colors.blue.shade100 : Colors.white,
+                              tileColor: not_map["isRead"] == false ? Colors.blue.shade100 : Colors.white,
                               title: const Text("Atık Toplama Bildirimi",
                                 style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),),
                               subtitle: Padding(padding: const EdgeInsets.all(5.0),
@@ -66,32 +75,50 @@ class NotificationsPageState extends State<NotificationsPage>{
                                     children: [
                                       Wrap(children: [
                                         const Text("Atık Toplama Tarihi: "),
-                                        Text(not_map["wasteTakeDate"],
+                                        Text(not_map["dateToTake_S"],
                                           style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 15,
                                             fontWeight: FontWeight.w600),)
                                       ]),
                                       Wrap(children: [
                                         const Text("Atık Toplama Saat Aralığı: "),
-                                        Text(not_map["wasteTakeTime"],
+                                        Text(not_map["timeToTake_S"],
                                           style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 15,
                                             fontWeight: FontWeight.w600),)
                                       ]),
                                       Wrap(children: [
                                         const Text("Atık Toplama Noktası: "),
-                                        Text(not_map["wasteTakePoint"],
+                                        Text(not_map["pointToTake_S"],
                                           style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 15,
                                             fontWeight: FontWeight.w600),)
                                       ]),
+                                      Wrap(children: [
+                                        const Text("Atık Toplandı mı: "),
+                                        Text(not_map["isTaken"] ==true ? "Evet" : "Hayır",
+                                          style: TextStyle(
+                                              fontStyle: FontStyle.italic,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: not_map["isTaken"] == true ? Colors.green : Colors.orange,
+                                          ),
+                                        )
+                                      ]),
                                     ]),
                               ),
-                              trailing: Card( color: not_map["isSeen"] == false ? Colors.blue.shade100 : Colors.white,
-                                  elevation: 4, child: Text(not_map["sentDate_S"])),
+                              trailing: Card( color: not_map["isRead"] == false ? Colors.blue.shade100 : Colors.white,
+                                  elevation: 4, child: Text(not_map["answerDate_S"].toString().substring(0, 16))),
                               onTap: () async {
-                                await FirebaseFirestore.instance.collection("giverUsers").doc(user_id)
-                                    .collection("takenNotifications").doc(not_id).update({
-                                  "isSeen": true,
-                                });
-                              }
+
+                                if(not_map["isRead"] == false){
+                                  await FirebaseFirestore.instance.collection("giverUsers").doc(user_id).get()
+                                      .then((_giver) {
+                                    _giver.reference.update({"notificationsUnseen": _giver.get("notificationsUnseen")-1 });
+                                    _giver.reference.collection("takenNotifications").doc(not_id).update({"isRead": true, });
+                                  });
+                                }
+                              },
+                            onLongPress: (){
+                              assignTheWasteTaken(not_id);
+                            },
                           ),
                         );
                       },
@@ -105,6 +132,23 @@ class NotificationsPageState extends State<NotificationsPage>{
         ],
       ),
     );
+  }
+
+  void assignTheWasteTaken(dynamic not_id) {
+    AlertDialog alertDialog = AlertDialog(
+      title: Center(child: Text("Atıklarınız kurum tarafından toplandı mı?")),
+      actions: [
+        ElevatedButton(
+          child: Text("Evet"),
+          onPressed: () async {
+            await FirebaseFirestore.instance.collection("giverUsers").doc(user_id)
+                .collection("takenNotifications").doc(not_id).update({"isTaken": true,});
+
+            Navigator.of(context, rootNavigator: true).pop("dialog");
+            },
+        ),
+      ],
+    ); showDialog(context: context, builder: (_) => alertDialog);
   }
 
 }
